@@ -48,7 +48,7 @@ sudo hostnamectl set-hostname k8s-worker-02
 ```bash
 ansible --version    # >= 2.15
 helm version         # >= 3.12
-kubectl version      # >= 1.32
+kubectl version      # >= 1.34
 cilium version       # >= 0.15 (optional, for verification)
 ```
 
@@ -105,7 +105,7 @@ ansible-playbook playbooks/site.yml --ask-vault-pass
 ```
 
 This runs all 5 phases in order:
-1. **00-prerequisites.yml** — Disables swap, loads kernel modules, installs containerd + kubeadm/kubelet/kubectl 1.32.x
+1. **00-prerequisites.yml** — Disables swap, loads kernel modules, installs containerd + kubeadm/kubelet/kubectl 1.34.x
 2. **01-master-init.yml** — Runs `kubeadm init` on k8s-master-01 (skips kube-proxy, Cilium replaces it)
 3. **02-worker-join.yml** — Joins both workers to the cluster
 4. **03-cni-cilium.yml** — Installs Cilium via Helm with Hubble UI and eBPF kube-proxy replacement
@@ -147,9 +147,9 @@ cp kubeconfig ~/.kube/config
 kubectl get nodes -o wide
 # Expected:
 # NAME             STATUS   ROLES           VERSION   INTERNAL-IP      OS-IMAGE
-# k8s-master-01   Ready    control-plane   v1.32.x   192.168.68.93   Ubuntu 24.04
-# k8s-worker-01   Ready    <none>          v1.32.x   192.168.68.84   Ubuntu 24.04
-# k8s-worker-02   Ready    <none>          v1.32.x   192.168.68.88   Ubuntu 24.04
+# k8s-master-01   Ready    control-plane   v1.34.x   192.168.68.93   Ubuntu 24.04
+# k8s-worker-01   Ready    <none>          v1.34.x   192.168.68.84   Ubuntu 24.04
+# k8s-worker-02   Ready    <none>          v1.34.x   192.168.68.88   Ubuntu 24.04
 
 # Check Cilium
 cilium status
