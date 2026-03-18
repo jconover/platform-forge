@@ -1,0 +1,25 @@
+---
+# Cilium Helm chart settings
+cilium_namespace: kube-system
+cilium_release_name: cilium
+cilium_chart_version: "1.16.6"   # Pin to a tested version; update deliberately
+cilium_helm_repo: "https://helm.cilium.io/"
+
+# Cilium CLI version for verification
+cilium_cli_version: "v0.16.22"
+cilium_cli_binary: /usr/local/bin/cilium
+
+# Helm binary location (installed via snap or script)
+helm_binary: /usr/local/bin/helm
+helm_install_script_url: "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
+
+# Hubble
+hubble_relay_enabled: true
+hubble_ui_enabled: true
+
+# IPAM
+cilium_ipam_mode: cluster-pool
+
+# Timeouts
+cilium_ready_timeout: 300
+cilium_ready_delay: 15

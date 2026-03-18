@@ -1,0 +1,11 @@
+---
+# Phase 3: Install Cilium CNI with Hubble
+# Targets: masters group (kubectl/helm commands run on control plane)
+# Depends on: 01-master-init.yml
+# Run standalone: ansible-playbook playbooks/03-cni-cilium.yml
+
+- name: Install Cilium CNI on the control plane
+  hosts: masters
+  gather_facts: true
+  roles:
+    - role: cni-cilium

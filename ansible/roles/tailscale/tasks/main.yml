@@ -1,0 +1,105 @@
+---
+# tailscale role: installs and configures Tailscale on all nodes
+# Requires tailscale_auth_key via secrets.yml (ansible-vault encrypted).
+
+- name: Assert tailscale_auth_key is provided
+  ansible.builtin.assert:
+    that:
+      - tailscale_auth_key is defined
+      - tailscale_auth_key | length > 0
+    fail_msg: >
+      tailscale_auth_key is not set. Copy secrets.example.yml to secrets.yml,
+      fill in the key, then run: ansible-vault encrypt secrets.yml
+      Pass --ask-vault-pass or --vault-password-file to ansible-playbook.
+
+# ── Install ───────────────────────────────────────────────────────────────────
+
+- name: Check if Tailscale is already installed
+  ansible.builtin.stat:
+    path: /usr/bin/tailscale
+  register: tailscale_binary_stat
+
+- name: Download Tailscale install script
+  ansible.builtin.get_url:
+    url: "{{ tailscale_install_script_url }}"
+    dest: /tmp/tailscale_install.sh
+    mode: "0700"
+  when: not tailscale_binary_stat.stat.exists
+
+- name: Run Tailscale install script
+  ansible.builtin.command: /tmp/tailscale_install.sh
+  when: not tailscale_binary_stat.stat.exists
+  changed_when: true
+
+- name: Remove Tailscale install script
+  ansible.builtin.file:
+    path: /tmp/tailscale_install.sh
+    state: absent
+  when: not tailscale_binary_stat.stat.exists
+
+# ── Service ───────────────────────────────────────────────────────────────────
+
+- name: Enable and start tailscaled
+  ansible.builtin.systemd:
+    name: "{{ tailscale_service }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for tailscaled socket to be available
+  ansible.builtin.wait_for:
+    path: /var/run/tailscale/tailscaled.sock
+    timeout: 30
+
+# ── Authentication and route advertisement ────────────────────────────────────
+
+- name: Check current Tailscale status
+  ansible.builtin.command: tailscale status --json
+  register: tailscale_status_raw
+  changed_when: false
+  failed_when: false
+
+- name: Parse Tailscale status
+  ansible.builtin.set_fact:
+    tailscale_status: "{{ tailscale_status_raw.stdout | from_json }}"
+  when: tailscale_status_raw.rc == 0 and tailscale_status_raw.stdout | length > 0
+
+- name: Determine if Tailscale is already authenticated
+  ansible.builtin.set_fact:
+    tailscale_authenticated: >-
+      {{
+        tailscale_status is defined and
+        tailscale_status.BackendState is defined and
+        tailscale_status.BackendState == 'Running'
+      }}
+
+- name: Bring up Tailscale on master with route advertisement
+  ansible.builtin.command: >
+    tailscale up
+    --authkey={{ tailscale_auth_key }}
+    {{ tailscale_master_extra_args }}
+  when:
+    - not tailscale_authenticated
+    - inventory_hostname in groups['masters']
+  changed_when: true
+  no_log: true # suppress auth key from logs
+
+- name: Bring up Tailscale on workers
+  ansible.builtin.command: >
+    tailscale up
+    --authkey={{ tailscale_auth_key }}
+    {{ tailscale_worker_extra_args }}
+  when:
+    - not tailscale_authenticated
+    - inventory_hostname in groups['workers']
+  changed_when: true
+  no_log: true
+
+- name: Verify Tailscale is connected
+  ansible.builtin.command: tailscale status
+  changed_when: false
+  register: tailscale_final_status
+
+- name: Show Tailscale status
+  ansible.builtin.debug:
+    var: tailscale_final_status.stdout_lines

@@ -1,0 +1,172 @@
+---
+# Prerequisites role: prepares every node for kubeadm Kubernetes
+# Idempotent — safe to re-run at any time.
+
+# ── Swap ──────────────────────────────────────────────────────────────────────
+
+- name: Disable swap immediately
+  ansible.builtin.command: swapoff -a
+  changed_when: false
+
+- name: Remove swap entries from /etc/fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#].*\s+swap\s+.*)$'
+    replace: '# \1'
+    backup: true
+
+# ── Kernel modules ────────────────────────────────────────────────────────────
+
+- name: Ensure kernel modules load at boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Load kernel modules now
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ prerequisites_kernel_modules }}"
+
+# ── sysctl ────────────────────────────────────────────────────────────────────
+
+- name: Apply required sysctl settings for Kubernetes networking
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/k8s.conf
+  loop: "{{ prerequisites_sysctl_params | dict2items }}"
+
+# ── APT prerequisites ─────────────────────────────────────────────────────────
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install apt prerequisite packages
+  ansible.builtin.apt:
+    name: "{{ prerequisites_apt_packages }}"
+    state: present
+
+# ── containerd ────────────────────────────────────────────────────────────────
+
+- name: Create apt keyrings directory
+  ansible.builtin.file:
+    path: "{{ prerequisites_apt_keyring_dir }}"
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+
+- name: Download Docker GPG key for containerd repo
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /tmp/docker.gpg
+    mode: "0644"
+
+- name: Dearmor Docker GPG key into keyring
+  ansible.builtin.shell: |
+    set -o pipefail
+    gpg --dearmor < /tmp/docker.gpg > {{ prerequisites_containerd_apt_keyring_file }}
+  args:
+    creates: "{{ prerequisites_containerd_apt_keyring_file }}"
+  changed_when: true
+
+- name: Add containerd (Docker) apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch=amd64 signed-by={{ prerequisites_containerd_apt_keyring_file }}]
+      {{ prerequisites_containerd_apt_repo_url }}
+      {{ ansible_distribution_release }} stable
+    state: present
+    filename: docker
+    update_cache: true
+
+- name: Install containerd.io
+  ansible.builtin.apt:
+    name: containerd.io
+    state: present
+  notify: Restart containerd
+
+- name: Ensure containerd config directory exists
+  ansible.builtin.file:
+    path: "{{ prerequisites_containerd_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Generate default containerd configuration
+  ansible.builtin.shell: containerd config default > {{ prerequisites_containerd_config_file }}
+  args:
+    creates: "{{ prerequisites_containerd_config_file }}"
+  changed_when: true
+  notify: Restart containerd
+
+- name: Enable SystemdCgroup in containerd config
+  ansible.builtin.replace:
+    path: "{{ prerequisites_containerd_config_file }}"
+    regexp: '(\s+SystemdCgroup\s*=\s*)false'
+    replace: '\1true'
+  notify: Restart containerd
+
+- name: Enable and start containerd
+  ansible.builtin.systemd:
+    name: containerd
+    enabled: true
+    state: started
+
+# ── Kubernetes apt repo ───────────────────────────────────────────────────────
+
+- name: Download Kubernetes apt GPG key
+  ansible.builtin.get_url:
+    url: "{{ prerequisites_k8s_apt_repo_url }}Release.key"
+    dest: /tmp/kubernetes.gpg
+    mode: "0644"
+
+- name: Dearmor Kubernetes GPG key into keyring
+  ansible.builtin.shell: |
+    set -o pipefail
+    gpg --dearmor < /tmp/kubernetes.gpg > {{ prerequisites_k8s_apt_keyring_file }}
+  args:
+    creates: "{{ prerequisites_k8s_apt_keyring_file }}"
+  changed_when: true
+
+- name: Add Kubernetes apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by={{ prerequisites_k8s_apt_keyring_file }}]
+      {{ prerequisites_k8s_apt_repo_url }} /
+    state: present
+    filename: kubernetes
+    update_cache: true
+
+# ── kubeadm / kubelet / kubectl ───────────────────────────────────────────────
+
+- name: Install Kubernetes packages (pinned version)
+  ansible.builtin.apt:
+    name: "{{ prerequisites_k8s_packages }}"
+    state: present
+    allow_downgrades: false
+  notify: Restart kubelet
+
+- name: Hold Kubernetes packages at current version
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+- name: Enable and start kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    state: started

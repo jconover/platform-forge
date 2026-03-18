@@ -1,0 +1,10 @@
+---
+# Phase 0: Install and configure all prerequisites on every node
+# Targets: all (masters + workers)
+# Run standalone: ansible-playbook playbooks/00-prerequisites.yml
+
+- name: Bootstrap prerequisites on all Kubernetes nodes
+  hosts: all
+  gather_facts: true
+  roles:
+    - role: prerequisites

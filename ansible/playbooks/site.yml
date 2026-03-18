@@ -1,0 +1,30 @@
+---
+# Master playbook: bootstraps a full kubeadm Kubernetes cluster
+# Usage: ansible-playbook playbooks/site.yml [-e @secrets.yml]
+#
+# Run individual phases with tags:
+#   --tags prerequisites
+#   --tags master-init
+#   --tags worker-join
+#   --tags cni
+#   --tags tailscale
+
+- name: "Phase 0: Prerequisites on all nodes"
+  import_playbook: 00-prerequisites.yml
+  tags: [prerequisites]
+
+- name: "Phase 1: Initialize Kubernetes control plane"
+  import_playbook: 01-master-init.yml
+  tags: [master-init]
+
+- name: "Phase 2: Join worker nodes"
+  import_playbook: 02-worker-join.yml
+  tags: [worker-join]
+
+- name: "Phase 3: Install Cilium CNI"
+  import_playbook: 03-cni-cilium.yml
+  tags: [cni, cilium]
+
+- name: "Phase 4: Configure Tailscale"
+  import_playbook: 04-tailscale.yml
+  tags: [tailscale]

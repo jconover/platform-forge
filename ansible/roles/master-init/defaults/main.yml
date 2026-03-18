@@ -1,0 +1,14 @@
+---
+# kubeadm init configuration
+kubeadm_config_dir: /etc/kubernetes
+kubeadm_admin_conf: /etc/kubernetes/admin.conf
+kubeadm_join_command_file: /tmp/kubeadm_join_command.sh
+
+# User home directory for kubeconfig setup
+kube_user: "{{ ansible_user }}"
+kube_user_home: "/home/{{ kube_user }}"
+kube_config_dir: "/home/{{ kube_user }}/.kube"
+kube_config_file: "/home/{{ kube_user }}/.kube/config"
+
+# Where to save the kubeconfig on the Ansible controller
+local_kubeconfig_dest: "{{ playbook_dir }}/../kubeconfig"

@@ -1,0 +1,15 @@
+---
+# Phase 4: Install and configure Tailscale on all nodes
+# Targets: all
+# Requires: tailscale_auth_key in secrets.yml (ansible-vault encrypted)
+# Run standalone:
+#   ansible-playbook playbooks/04-tailscale.yml \
+#     --ask-vault-pass -e @secrets.yml
+
+- name: Configure Tailscale mesh networking on all nodes
+  hosts: all
+  gather_facts: true
+  vars_files:
+    - "{{ playbook_dir }}/../secrets.yml"
+  roles:
+    - role: tailscale

@@ -1,0 +1,39 @@
+---
+# Kernel modules required by Kubernetes / containerd
+prerequisites_kernel_modules:
+  - overlay
+  - br_netfilter
+
+# sysctl settings required for Kubernetes networking
+prerequisites_sysctl_params:
+  net.bridge.bridge-nf-call-iptables: 1
+  net.bridge.bridge-nf-call-ip6tables: 1
+  net.ipv4.ip_forward: 1
+
+# containerd configuration
+prerequisites_containerd_config_dir: /etc/containerd
+prerequisites_containerd_config_file: /etc/containerd/config.toml
+
+# Kubernetes apt repo
+prerequisites_apt_keyring_dir: /etc/apt/keyrings
+prerequisites_k8s_apt_keyring_file: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+prerequisites_k8s_apt_repo_url: "https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/"
+
+# containerd apt repo
+prerequisites_containerd_apt_keyring_file: /etc/apt/keyrings/docker.gpg
+prerequisites_containerd_apt_repo_url: "https://download.docker.com/linux/ubuntu"
+
+# Packages to install before adding repos
+prerequisites_apt_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gpg
+  - gnupg
+  - lsb-release
+
+# Kubernetes packages (version pinned via apt preference)
+prerequisites_k8s_packages:
+  - "kubelet={{ kubernetes_version }}.*"
+  - "kubeadm={{ kubernetes_version }}.*"
+  - "kubectl={{ kubernetes_version }}.*"

@@ -1,0 +1,8 @@
+---
+# Path to the join command on master and workers
+kubeadm_join_command_file: /tmp/kubeadm_join_command.sh
+kubelet_conf: /etc/kubernetes/kubelet.conf
+
+# How long to wait for node to become Ready (seconds)
+node_ready_timeout: 120
+node_ready_delay: 10

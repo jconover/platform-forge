@@ -1,0 +1,15 @@
+---
+# Tailscale install script
+tailscale_install_script_url: "https://tailscale.com/install.sh"
+
+# Auth key — override via secrets.yml (ansible-vault)
+tailscale_auth_key: ""
+
+# Tailscale up flags for master (advertise pod CIDR for cluster routing)
+tailscale_master_extra_args: "--advertise-routes={{ pod_cidr }} --accept-routes"
+
+# Tailscale up flags for workers
+tailscale_worker_extra_args: "--accept-routes"
+
+# Tailscale daemon socket/service name
+tailscale_service: tailscaled

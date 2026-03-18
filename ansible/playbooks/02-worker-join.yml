@@ -1,0 +1,11 @@
+---
+# Phase 2: Join worker nodes to the cluster
+# Targets: workers group
+# Depends on: 01-master-init.yml (join command file must exist on master)
+# Run standalone: ansible-playbook playbooks/02-worker-join.yml
+
+- name: Join worker nodes to the Kubernetes cluster
+  hosts: workers
+  gather_facts: true
+  roles:
+    - role: worker-join

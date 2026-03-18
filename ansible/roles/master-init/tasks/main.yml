@@ -1,0 +1,57 @@
+---
+# master-init role: initializes the Kubernetes control plane with kubeadm
+# Idempotent — skips init if cluster already exists.
+
+- name: Check if cluster is already initialized
+  ansible.builtin.stat:
+    path: "{{ kubeadm_admin_conf }}"
+  register: kubeadm_admin_conf_stat
+
+- name: Run kubeadm init
+  ansible.builtin.command: >
+    kubeadm init
+    --pod-network-cidr={{ pod_cidr }}
+    --service-cidr={{ service_cidr }}
+    --control-plane-endpoint={{ ansible_host }}
+    --skip-phases=addon/kube-proxy
+  when: not kubeadm_admin_conf_stat.stat.exists
+  register: kubeadm_init_result
+  changed_when: kubeadm_init_result.rc == 0
+  # kube-proxy skipped: Cilium replaces it in eBPF mode
+
+- name: Create .kube directory for {{ kube_user }}
+  ansible.builtin.file:
+    path: "{{ kube_config_dir }}"
+    state: directory
+    owner: "{{ kube_user }}"
+    group: "{{ kube_user }}"
+    mode: "0700"
+
+- name: Copy admin.conf to user kubeconfig
+  ansible.builtin.copy:
+    src: "{{ kubeadm_admin_conf }}"
+    dest: "{{ kube_config_file }}"
+    owner: "{{ kube_user }}"
+    group: "{{ kube_user }}"
+    mode: "0600"
+    remote_src: true
+
+- name: Generate kubeadm join command
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: kubeadm_join_command
+  changed_when: false
+
+- name: Save join command to file on master
+  ansible.builtin.copy:
+    content: "{{ kubeadm_join_command.stdout }}"
+    dest: "{{ kubeadm_join_command_file }}"
+    mode: "0600"
+    owner: root
+    group: root
+
+- name: Fetch kubeconfig to Ansible controller
+  ansible.builtin.fetch:
+    src: "{{ kubeadm_admin_conf }}"
+    dest: "{{ local_kubeconfig_dest }}"
+    flat: true
+  # Note: update server: field if accessing API from outside cluster network

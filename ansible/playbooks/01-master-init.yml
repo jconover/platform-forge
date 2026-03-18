@@ -1,0 +1,10 @@
+---
+# Phase 1: Initialize the Kubernetes control plane
+# Targets: masters group
+# Run standalone: ansible-playbook playbooks/01-master-init.yml
+
+- name: Initialize Kubernetes control plane
+  hosts: masters
+  gather_facts: true
+  roles:
+    - role: master-init

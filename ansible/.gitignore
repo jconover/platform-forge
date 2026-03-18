@@ -1,0 +1,7 @@
+secrets.yml
+*.retry
+kubeconfig
+/facts_cache/
+__pycache__/
+*.pyc
+.molecule/
