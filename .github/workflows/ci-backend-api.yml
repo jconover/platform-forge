@@ -1,0 +1,29 @@
+name: CI - backend-api
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/backend-api/**"
+      - ".github/workflows/ci-backend-api.yml"
+      - ".github/workflows/ci-reusable.yml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/backend-api/**"
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci-reusable.yml
+    with:
+      service_name: backend-api
+      service_path: apps/backend-api
+      language: python

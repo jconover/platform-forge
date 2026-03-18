@@ -1,0 +1,29 @@
+name: CI - worker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/worker/**"
+      - ".github/workflows/ci-worker.yml"
+      - ".github/workflows/ci-reusable.yml"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/worker/**"
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci-reusable.yml
+    with:
+      service_name: worker
+      service_path: apps/worker
+      language: go
