@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api-gateway
+  description: HTTP API Gateway - routes requests to backend services
+  annotations:
+    github.com/project-slug: OWNER/platform-forge
+    argocd/app-name: api-gateway
+    backstage.io/kubernetes-id: api-gateway
+  tags:
+    - go
+    - gateway
+    - http
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  dependsOn:
+    - component:backend-api
+  providesApis:
+    - api-gateway-api

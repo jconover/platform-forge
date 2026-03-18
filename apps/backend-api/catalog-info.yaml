@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backend-api
+  description: Python FastAPI backend service with mock item data
+  annotations:
+    github.com/project-slug: OWNER/platform-forge
+    argocd/app-name: backend-api
+    backstage.io/kubernetes-id: backend-api
+  tags:
+    - python
+    - fastapi
+    - rest
+spec:
+  type: service
+  lifecycle: production
+  owner: platform-team
+  providesApis:
+    - backend-api-api
