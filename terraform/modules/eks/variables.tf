@@ -6,7 +6,7 @@ variable "cluster_name" {
 variable "kubernetes_version" {
   description = "Kubernetes version for the EKS control plane. EKS control plane costs ~$73/mo regardless of node count."
   type        = string
-  default     = "1.32"
+  default     = "1.34"
 }
 
 variable "vpc_id" {

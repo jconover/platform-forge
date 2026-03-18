@@ -12,7 +12,7 @@ locals {
 # ---------------------------------------------------------------------------
 # EKS Cluster
 # Cost: ~$73/mo for the control plane regardless of node count.
-# Kubernetes 1.32 is the target version.
+# Kubernetes 1.34 is the target version.
 # ---------------------------------------------------------------------------
 resource "aws_eks_cluster" "this" {
   name     = var.cluster_name

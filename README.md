@@ -59,7 +59,7 @@ A self-hosted [Backstage](https://backstage.io) portal running on a kubeadm clus
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Kubernetes** | kubeadm 1.32.x | Production-grade cluster bootstrap |
+| **Kubernetes** | kubeadm 1.34.x | Production-grade cluster bootstrap |
 | **CNI** | Cilium + Hubble | eBPF networking with observability |
 | **GitOps** | ArgoCD | Declarative app delivery via app-of-apps |
 | **IDP** | Backstage | Developer portal with K8s/ArgoCD/GitHub plugins |
@@ -193,9 +193,9 @@ ansible-playbook playbooks/04-tailscale.yml       # Tailscale mesh on all nodes
 ```bash
 kubectl get nodes -o wide
 # NAME             STATUS   ROLES           VERSION   OS-IMAGE
-# k8s-master-01   Ready    control-plane   v1.32.x   Ubuntu 24.04
-# k8s-worker-01   Ready    <none>          v1.32.x   Ubuntu 24.04
-# k8s-worker-02   Ready    <none>          v1.32.x   Ubuntu 24.04
+# k8s-master-01   Ready    control-plane   v1.34.x   Ubuntu 24.04
+# k8s-worker-01   Ready    <none>          v1.34.x   Ubuntu 24.04
+# k8s-worker-02   Ready    <none>          v1.34.x   Ubuntu 24.04
 
 cilium connectivity test    # All tests pass
 cilium hubble ui            # Opens Hubble network observability
