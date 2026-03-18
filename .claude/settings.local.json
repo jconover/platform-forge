@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://github.com/liqotech/liqo)",
+      "Bash(cat /home/justin/Projects/platform-forge/k8s/argocd/*.yaml)",
+      "Bash(ansible-playbook --syntax-check playbooks/site.yml)",
+      "Bash(terraform version:*)",
+      "Bash(cat /home/justin/Projects/platform-forge/k8s/monitoring/*.yaml)",
+      "Bash(terraform fmt:*)",
+      "Bash(terraform init:*)",
+      "Bash(terraform validate:*)",
+      "Bash(ansible-playbook --syntax-check playbooks/04-tailscale.yml)",
+      "Bash(ansible-lint playbooks/site.yml)",
+      "Bash(cp -r src/* .)",
+      "Bash(go mod:*)",
+      "Bash(cd:*)",
+      "Bash(/home/justin/Projects/platform-forge/.github/workflows/ci-reusable.yml:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(/home/justin/Projects/platform-forge/.github/workflows/ci-api-gateway.yml:*)",
+      "Bash(__NEW_LINE_0fd051288489e65c__ cat:*)",
+      "Bash(/home/justin/Projects/platform-forge/.github/workflows/ci-backend-api.yml:*)",
+      "Bash(/home/justin/Projects/platform-forge/.github/workflows/ci-worker.yml:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(python3:*)"
+    ]
+  }
+}

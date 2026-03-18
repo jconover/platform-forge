@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: idp-platform
+  description: Internal Developer Platform - Hybrid Cloud Demo
+spec:
+  owner: platform-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: platform-engineering
+  description: Platform Engineering Domain
+spec:
+  owner: platform-team
