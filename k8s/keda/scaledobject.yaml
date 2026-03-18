@@ -1,0 +1,41 @@
+# KEDA ScaledObject — burst trigger for the worker Deployment
+#
+# Scales the `worker` Deployment in the `default` namespace based on cluster
+# CPU utilization reported by Prometheus.
+#
+# Thresholds:
+#   activationThreshold: 0.70 — KEDA begins watching (moves from 0 replicas to minReplicaCount)
+#   threshold: 0.80           — each replica handles ~5% of headroom; scale-out beyond min
+#
+# maxReplicaCount=20 matches the Karpenter NodePool vCPU budget (20 vCPU across burst nodes).
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: worker-burst-scaler
+  namespace: default
+  labels:
+    app: worker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+  minReplicaCount: 1
+  maxReplicaCount: 20
+  # Wait 5 minutes before scaling in to avoid flapping
+  cooldownPeriod: 300
+  # Poll Prometheus every 15 seconds
+  pollingInterval: 15
+  triggers:
+    - type: prometheus
+      metadata:
+        # Prometheus service in the monitoring namespace (kube-prometheus-stack default name)
+        serverAddress: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+        metricName: cluster_cpu_utilization
+        # Query: fraction of CPU time that is NOT idle, averaged across all nodes
+        query: |
+          1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))
+        # Scale out when cluster CPU > 80%
+        threshold: "0.80"
+        # Start activating (scale from 0 if needed) when CPU > 70%
+        activationThreshold: "0.70"

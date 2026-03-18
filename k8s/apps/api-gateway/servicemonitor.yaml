@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-gateway
+  namespace: default
+  labels:
+    app: api-gateway
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/part-of: idp-platform
+    # Label required by kube-prometheus-stack to auto-discover ServiceMonitors
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

@@ -1,0 +1,65 @@
+# Liqo Helm values — EKS burst cluster (provider / resource supplier)
+# Chart: liqo/liqo
+#
+# This cluster acts as the PROVIDER in the federation:
+# it accepts offloaded workloads from the on-prem cluster during burst events.
+#
+# Networking: internal=true — Tailscale handles cross-cluster connectivity.
+
+discovery:
+  config:
+    clusterName: eks-burst
+    clusterLabels:
+      topology.kubernetes.io/region: us-east-1
+      node-type: eks-burst
+
+networking:
+  # Rely on Tailscale; disable Liqo's built-in WireGuard tunnels
+  internal: true
+  reflectIPs: true
+
+auth:
+  # EKS auth endpoint — exposed via AWS Load Balancer (set by EKS ingress controller)
+  # Update host after the LB DNS name is known
+  ingress:
+    enable: true
+    ingressClassName: alb
+    host: liqo-auth.eks-burst.internal
+    annotations:
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/scheme: internal
+
+# Resource sharing — EKS only provides capacity to the on-prem cluster
+resourceSharing:
+  incoming:
+    # Do NOT accept workloads pushed from other clusters into EKS
+    enabled: false
+  outgoing:
+    # Offer EKS capacity to the federation
+    enabled: true
+
+# Namespace offloading: EKS receives namespaces from on-prem
+offloading:
+  defaultNamespaceOffloadingStrategy: Remote
+
+virtualKubelet:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+controllerManager:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+# Storage reflection not needed for burst/stateless workloads
+storage:
+  enable: false

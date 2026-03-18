@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: worker
+  namespace: default
+  labels:
+    app: worker
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/part-of: idp-platform
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

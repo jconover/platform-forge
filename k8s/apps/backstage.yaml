@@ -1,0 +1,31 @@
+# ArgoCD Application — Backstage IDP
+# Deploys the Backstage developer portal with PostgreSQL subchart
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backstage
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://backstage.github.io/charts
+      chart: backstage
+      targetRevision: "1.x"
+      helm:
+        releaseName: backstage
+        valueFiles:
+          - $values/k8s/backstage/values.yaml
+    - repoURL: https://github.com/OWNER/platform-forge.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: backstage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

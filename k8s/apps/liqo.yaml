@@ -1,0 +1,33 @@
+# ArgoCD Application — Liqo (on-prem cluster installation)
+# Enables multi-cluster federation between homelab and EKS burst cluster.
+# The EKS-side installation is performed separately via Terraform/Helm in the EKS context.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: liqo
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://helm.liqo.io
+      chart: liqo
+      targetRevision: "0.x"
+      helm:
+        releaseName: liqo
+        valueFiles:
+          - $values/k8s/liqo/values-onprem.yaml
+    - repoURL: https://github.com/OWNER/platform-forge.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: liqo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

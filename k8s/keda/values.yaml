@@ -1,0 +1,51 @@
+# KEDA Helm values
+# Chart: kedacore/keda
+# Kubernetes Event-Driven Autoscaling — enables Prometheus-triggered burst scaling
+
+# Single replica for homelab; increase for production HA
+operator:
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+metricsServer:
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Webhooks validate ScaledObject/ScaledJob resources
+webhooks:
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Run as non-root
+podSecurityContext:
+  runAsNonRoot: true
+
+# Enable Prometheus metrics from KEDA itself
+prometheus:
+  metricServer:
+    enabled: true
+  operator:
+    enabled: true
+  webhooks:
+    enabled: true

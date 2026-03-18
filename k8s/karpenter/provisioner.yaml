@@ -1,0 +1,106 @@
+# Karpenter NodePool — EKS burst nodes
+#
+# Provisions Spot instances for burst workloads offloaded from the on-prem cluster.
+# Uses only cost-effective instance families (m5/m5a) to stay within budget.
+#
+# Budget controls:
+#   - Max 20 vCPU total (matches KEDA maxReplicaCount=20 × ~1 vCPU/worker)
+#   - Max 80GiB memory
+#   - Spot only — if spot is unavailable workloads stay on-prem
+#
+# Scale-down: consolidateAfter=60s aggressively reclaims idle nodes to minimize cost.
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: burst-workers
+  labels:
+    node-type: burst
+spec:
+  template:
+    metadata:
+      labels:
+        node-type: burst
+        cluster: eks-burst
+    spec:
+      # Only allow workloads that explicitly tolerate burst nodes
+      taints:
+        - key: node-type
+          value: burst
+          effect: NoSchedule
+
+      nodeClassRef:
+        apiVersion: karpenter.k8s.aws/v1beta1
+        kind: EC2NodeClass
+        name: burst-node-class
+
+      requirements:
+        # Spot instances only for cost control
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot"]
+        # Restrict to cost-effective general-purpose instance families
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values:
+            - m5.large      # 2 vCPU,  8 GiB
+            - m5.xlarge     # 4 vCPU, 16 GiB
+            - m5a.large     # 2 vCPU,  8 GiB
+            - m5a.xlarge    # 4 vCPU, 16 GiB
+        # Use the same arch as on-prem nodes
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+
+  # Aggregate resource budget — prevents runaway scaling costs
+  limits:
+    cpu: "20"
+    memory: 80Gi
+
+  disruption:
+    # Consolidate idle nodes after 60 seconds (aggressive for demo cost control)
+    consolidationPolicy: WhenUnderutilized
+    consolidateAfter: 60s
+    # Expire nodes after 24h to pick up security patches
+    expireAfter: 24h
+
+---
+# EC2NodeClass defines the AWS-specific node configuration
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: burst-node-class
+spec:
+  # Use the same AMI family as the EKS managed node group
+  amiFamily: AL2
+
+  # IAM role for the burst nodes — must have AmazonEKSWorkerNodePolicy attached
+  # Replace with actual role name from Terraform output
+  role: "KarpenterNodeRole-eks-burst"
+
+  # Subnet selector — burst nodes go into private subnets
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: eks-burst
+
+  # Security group selector — use the same SG as the managed node group
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: eks-burst
+
+  # Root volume configuration
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 50Gi
+        volumeType: gp3
+        encrypted: true
+        deleteOnTermination: true
+
+  # User data additions (optional — EKS bootstrap handled by AL2 AMI)
+  userData: ""
+
+  # Tags applied to all provisioned EC2 instances
+  tags:
+    Project: platform-forge
+    ManagedBy: karpenter
+    NodeType: burst

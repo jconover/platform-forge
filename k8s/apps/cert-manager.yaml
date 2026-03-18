@@ -1,0 +1,32 @@
+# ArgoCD Application — cert-manager
+# Manages TLS certificate lifecycle for all platform ingresses
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://charts.jetstack.io
+      chart: cert-manager
+      targetRevision: "v1.14.x"
+      helm:
+        releaseName: cert-manager
+        valueFiles:
+          - $values/k8s/cert-manager/values.yaml
+    - repoURL: https://github.com/OWNER/platform-forge.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

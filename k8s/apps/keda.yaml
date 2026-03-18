@@ -1,0 +1,33 @@
+# ArgoCD Application — KEDA
+# Deploys KEDA operator and metrics server for event-driven autoscaling.
+# The ScaledObject for the worker is managed separately (k8s/keda/scaledobject.yaml).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keda
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://kedacore.github.io/charts
+      chart: keda
+      targetRevision: "2.x"
+      helm:
+        releaseName: keda
+        valueFiles:
+          - $values/k8s/keda/values.yaml
+    - repoURL: https://github.com/OWNER/platform-forge.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keda
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

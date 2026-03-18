@@ -1,0 +1,35 @@
+# ArgoCD Application — kube-prometheus-stack
+# Deploys Prometheus, Grafana, Alertmanager, node-exporter, kube-state-metrics
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # Helm chart from upstream repo
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: "58.x"
+      helm:
+        releaseName: prometheus
+        valueFiles:
+          # Values file from our Git repo (second source)
+          - $values/k8s/monitoring/values.yaml
+    # Git repo providing the values file
+    - repoURL: https://github.com/OWNER/platform-forge.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true   # required for large CRDs (PrometheusRule, etc.)

@@ -1,0 +1,69 @@
+# Liqo Helm values — on-prem homelab cluster (control plane / consumer)
+# Chart: liqo/liqo
+#
+# This cluster acts as the CONSUMER in the federation:
+# it offloads workloads to the EKS burst cluster when local capacity is insufficient.
+#
+# Networking: internal=true because Tailscale provides the cross-cluster overlay.
+# Liqo's built-in WireGuard tunnels are disabled to avoid conflicting with Cilium.
+
+discovery:
+  config:
+    # Unique human-readable name for this cluster
+    clusterName: onprem-homelab
+    # Auto-generated cluster ID is set by Liqo on first install; leave empty here
+    clusterLabels:
+      topology.kubernetes.io/region: homelab
+      node-type: on-prem
+
+networking:
+  # Use Tailscale for cross-cluster connectivity instead of Liqo tunnels
+  internal: true
+  # Reflect pod CIDRs so remote cluster knows our pod network
+  reflectIPs: true
+
+auth:
+  # Expose auth endpoint via ingress so EKS can peer with us
+  ingress:
+    enable: true
+    ingressClassName: nginx
+    host: liqo-auth.192.168.68.93.nip.io
+    annotations:
+      cert-manager.io/cluster-issuer: selfsigned-issuer
+
+# Resource sharing — this cluster shares capacity and also consumes from EKS
+resourceSharing:
+  # Offer a portion of local resources to the federation (consumers only mode off)
+  incoming:
+    enabled: true
+  outgoing:
+    enabled: true
+
+# Namespace offloading policy
+# Workloads in namespaces labelled liqo.io/enabled=true are eligible for offloading
+offloading:
+  defaultNamespaceOffloadingStrategy: LocalAndRemote
+
+# Virtual kubelet runs as a pod representing the remote (EKS) cluster nodes
+virtualKubelet:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+controllerManager:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+# Storage: enable reflection so PVCs can be offloaded
+storage:
+  enable: true
+  realStorageClassName: ""  # uses cluster default StorageClass

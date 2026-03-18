@@ -1,0 +1,21 @@
+# Headless-style ClusterIP service for the worker.
+# Exposes the health/metrics HTTP port so Prometheus ServiceMonitor can scrape it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker
+  namespace: default
+  labels:
+    app: worker
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: idp-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: worker
+  ports:
+    - name: http
+      port: 8082
+      targetPort: http
+      protocol: TCP
