@@ -1,0 +1,132 @@
+# ArgoCD Helm values for homelab IDP cluster
+# Single-instance (non-HA) deployment suitable for 32GB RAM nodes
+# Chart: argo/argo-cd
+
+global:
+  # Image tag pinned for reproducibility; update during upgrades
+  image:
+    tag: ""  # uses chart default
+
+## ArgoCD server
+server:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Expose ArgoCD UI via ingress-nginx
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: selfsigned-issuer
+      nginx.ingress.kubernetes.io/ssl-passthrough: "false"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    hosts:
+      - argocd.192.168.68.93.nip.io
+    tls:
+      - secretName: argocd-tls
+        hosts:
+          - argocd.192.168.68.93.nip.io
+
+  # Run server in insecure mode so ingress handles TLS termination
+  extraArgs:
+    - --insecure
+
+  # Security context for the server pod
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    fsGroup: 999
+
+## Application controller
+controller:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+## Repo server (fetches and renders manifests)
+repoServer:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+## Redis (used for caching; single instance for homelab)
+redis:
+  enabled: true
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+## ApplicationSet controller
+applicationSet:
+  enabled: true
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+## Notifications controller
+notifications:
+  enabled: true
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+## Dex (SSO; disabled for homelab simplicity — use local admin)
+dex:
+  enabled: false
+
+## Config — RBAC and repository credentials
+configs:
+  # Allow anonymous read-only access in homelab
+  params:
+    server.insecure: true
+
+  # RBAC policy: admins get full access
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      p, role:admin, applications, *, */*, allow
+      p, role:admin, clusters, *, *, allow
+      p, role:admin, repositories, *, *, allow
+      p, role:admin, logs, *, */*, allow
+      p, role:admin, exec, *, */*, allow
+      g, admin, role:admin
+
+  # CM settings
+  cm:
+    # Allow tracking revision in annotations (needed for app-of-apps)
+    application.resourceTrackingMethod: annotation

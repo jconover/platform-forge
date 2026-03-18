@@ -1,0 +1,144 @@
+# Backstage Helm values
+# Chart: backstage/backstage
+# Deploys the IDP Backstage instance with a bundled PostgreSQL database
+
+backstage:
+  image:
+    registry: ghcr.io
+    repository: OWNER/platform-forge/backstage
+    tag: latest
+    pullPolicy: Always
+
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  # Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  # Environment variables injected into the Backstage container
+  extraEnvVars:
+    # Kubernetes plugin — points to the in-cluster API server
+    - name: KUBERNETES_SERVICE_HOST
+      value: "kubernetes.default.svc"
+    - name: KUBERNETES_SERVICE_PORT
+      value: "443"
+
+    # ArgoCD plugin base URL
+    - name: ARGOCD_BASE_URL
+      value: "https://argocd.192.168.68.93.nip.io"
+    - name: ARGOCD_AUTH_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: backstage-secrets
+          key: argocd-auth-token
+
+    # GitHub integration (for catalog import, scaffolder, etc.)
+    - name: GITHUB_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: backstage-secrets
+          key: github-token
+
+    # PostgreSQL connection — provided by the subchart Secret
+    - name: POSTGRES_HOST
+      value: "backstage-postgresql"
+    - name: POSTGRES_PORT
+      value: "5432"
+    - name: POSTGRES_USER
+      value: "backstage"
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: backstage-postgresql
+          key: password
+
+  # Backstage app-config production overrides
+  # These are mounted as /app/app-config.production.yaml
+  appConfig:
+    app:
+      baseUrl: "https://backstage.192.168.68.93.nip.io"
+    backend:
+      baseUrl: "https://backstage.192.168.68.93.nip.io"
+      cors:
+        origin: "https://backstage.192.168.68.93.nip.io"
+      database:
+        client: pg
+        connection:
+          host: "${POSTGRES_HOST}"
+          port: "${POSTGRES_PORT}"
+          user: "${POSTGRES_USER}"
+          password: "${POSTGRES_PASSWORD}"
+    integrations:
+      github:
+        - host: github.com
+          token: "${GITHUB_TOKEN}"
+    kubernetes:
+      serviceLocatorMethod:
+        type: multiTenant
+      clusterLocatorMethods:
+        - type: config
+          clusters:
+            - url: "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
+              name: onprem-homelab
+              authProvider: serviceAccount
+              skipTLSVerify: true
+              serviceAccountToken:
+                $secret:
+                  env: K8S_SA_TOKEN
+    argocd:
+      baseUrl: "${ARGOCD_BASE_URL}"
+      username: admin
+      password:
+        $secret:
+          env: ARGOCD_AUTH_TOKEN
+      appLocatorMethods:
+        - type: config
+          instances:
+            - name: argocd
+              url: "${ARGOCD_BASE_URL}"
+
+## Ingress
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned-issuer
+  host: backstage.192.168.68.93.nip.io
+  tls:
+    enabled: true
+    secretName: backstage-tls
+
+## PostgreSQL subchart
+postgresql:
+  enabled: true
+  auth:
+    username: backstage
+    database: backstage
+    # Password stored in a Secret; chart generates one if existingSecret is not set
+    # To use an existing secret: existingSecret: backstage-postgresql-secret
+    password: ""   # override via --set or a values secret file
+  primary:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    persistence:
+      enabled: true
+      size: 5Gi
+    podSecurityContext:
+      enabled: true
+      runAsUser: 1001
+      fsGroup: 1001

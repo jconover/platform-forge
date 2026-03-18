@@ -1,0 +1,31 @@
+# Bootstrap Application — app-of-apps pattern
+# Apply this manually once to seed ArgoCD:
+#   kubectl apply -f k8s/argocd/application.yaml
+#
+# After this is applied ArgoCD will manage all other Applications
+# defined under k8s/apps/ automatically.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps
+  namespace: argocd
+  # Finalizer ensures child apps are cleaned up when this app is deleted
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/OWNER/platform-forge.git
+    targetRevision: main
+    # This directory contains individual Application manifests for each platform component
+    path: k8s/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true      # Remove resources deleted from Git
+      selfHeal: true   # Revert manual changes made outside Git
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground

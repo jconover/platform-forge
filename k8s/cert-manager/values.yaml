@@ -1,0 +1,54 @@
+# cert-manager Helm values
+# Chart: jetstack/cert-manager
+# Installs cert-manager CRDs and controller for automated TLS certificate management
+
+# Install CRDs as part of the Helm release
+# Note: on cluster teardown, CRDs (and all Certificate/Issuer objects) will also be removed
+installCRDs: true
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# Webhook handles validation of cert-manager resources
+webhook:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# cainjector injects CA bundles into webhook configurations
+cainjector:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Enable Prometheus metrics scraping
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+    namespace: monitoring
+
+# Security context — run as non-root
+securityContext:
+  runAsNonRoot: true
+
+podSecurityContext:
+  fsGroup: 1001
+  runAsUser: 1001

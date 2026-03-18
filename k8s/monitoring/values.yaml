@@ -1,0 +1,157 @@
+# kube-prometheus-stack Helm values
+# Chart: prometheus-community/kube-prometheus-stack
+# Deploys Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics
+
+## Prometheus
+prometheus:
+  prometheusSpec:
+    # Retain 7 days of metrics (appropriate for homelab disk space)
+    retention: 7d
+
+    # Scrape all ServiceMonitors in all namespaces
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+
+    # Scrape all PodMonitors in all namespaces
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+
+    # Persistent storage for metrics
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+    # Security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      fsGroup: 65534
+
+## Alertmanager
+alertmanager:
+  alertmanagerSpec:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+## Grafana
+grafana:
+  enabled: true
+  replicas: 1
+
+  # Admin credentials — password stored in a Secret created separately
+  # kubectl create secret generic grafana-admin-secret \
+  #   --from-literal=admin-user=admin \
+  #   --from-literal=admin-password=<password> \
+  #   -n monitoring
+  admin:
+    existingSecret: grafana-admin-secret
+    userKey: admin-user
+    passwordKey: admin-password
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: selfsigned-issuer
+    hosts:
+      - grafana.192.168.68.93.nip.io
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.192.168.68.93.nip.io
+
+  # Load dashboards from ConfigMaps labeled grafana_dashboard=1
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      folder: /var/lib/grafana/dashboards
+      searchNamespace: ALL
+    datasources:
+      enabled: true
+
+  # Additional data sources
+  additionalDataSources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+      isDefault: true
+
+  # Grafana.ini overrides
+  grafana.ini:
+    server:
+      root_url: "https://grafana.192.168.68.93.nip.io"
+    security:
+      allow_embedding: true
+    analytics:
+      reporting_enabled: false
+
+## Node Exporter — collects host-level metrics from every node
+nodeExporter:
+  enabled: true
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  # Mount host proc/sys for accurate metrics
+  hostRootFsMount:
+    enabled: true
+
+## kube-state-metrics — exposes Kubernetes object state as metrics
+kube-state-metrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+## Prometheus Operator
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+
+## Default scrape configs for platform services
+## Each component exposes a ServiceMonitor; this stack picks them up automatically
+## via the wildcard serviceMonitorSelector above.

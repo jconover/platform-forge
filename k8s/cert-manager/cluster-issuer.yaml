@@ -1,0 +1,12 @@
+# Self-signed ClusterIssuer for homelab TLS
+# Used by ingress resources via annotation:
+#   cert-manager.io/cluster-issuer: selfsigned-issuer
+#
+# Apply after cert-manager is running:
+#   kubectl apply -f k8s/cert-manager/cluster-issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}

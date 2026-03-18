@@ -1,0 +1,62 @@
+# ingress-nginx Helm values for bare-metal / homelab deployment
+# Chart: ingress-nginx/ingress-nginx
+# Uses NodePort service type since there is no cloud load balancer
+
+controller:
+  replicaCount: 1
+
+  # NodePort exposes the controller on a fixed port on every node
+  # Access via: http://<node-ip>:30080 / https://<node-ip>:30443
+  service:
+    type: NodePort
+    nodePorts:
+      http: 30080
+      https: 30443
+    # Disable externalTrafficPolicy=Local because we use NodePort on all nodes
+    externalTrafficPolicy: Cluster
+
+  # Allow the controller to handle SSL passthrough (needed for ArgoCD grpc)
+  extraArgs:
+    enable-ssl-passthrough: ""
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # ConfigMap settings applied to the nginx.conf
+  config:
+    # Use real client IP when behind NAT
+    use-forwarded-headers: "true"
+    # Increase proxy timeouts for long-lived connections (ArgoCD WebSocket)
+    proxy-read-timeout: "3600"
+    proxy-send-timeout: "3600"
+    # Improve security headers
+    hsts: "true"
+    hsts-max-age: "31536000"
+
+  # Prometheus metrics
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+
+  # Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 101
+
+  # Admission webhook validates Ingress objects
+  admissionWebhooks:
+    enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 20Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
