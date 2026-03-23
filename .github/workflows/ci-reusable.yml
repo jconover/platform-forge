@@ -40,6 +40,11 @@ jobs:
           go-version: "1.22"
           cache-dependency-path: ${{ inputs.service_path }}/src/go.sum
 
+      - name: Go mod tidy
+        if: inputs.language == 'go'
+        working-directory: ${{ inputs.service_path }}/src
+        run: go mod tidy
+
       - name: Go test
         if: inputs.language == 'go'
         working-directory: ${{ inputs.service_path }}/src
