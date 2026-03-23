@@ -10,14 +10,11 @@ COPY app-config.yaml ./
 
 FROM node:20-slim
 
-RUN addgroup --system --gid 1000 backstage && \
-    adduser --system --uid 1000 --ingroup backstage backstage
-
 WORKDIR /app
 
-COPY --from=build --chown=backstage:backstage /app /app
+COPY --from=build --chown=node:node /app /app
 
-USER backstage
+USER node
 
 ENV NODE_ENV=production
 EXPOSE 7007
