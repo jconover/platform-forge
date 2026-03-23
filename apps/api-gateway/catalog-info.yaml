@@ -4,7 +4,7 @@ metadata:
   name: api-gateway
   description: HTTP API Gateway - routes requests to backend services
   annotations:
-    github.com/project-slug: OWNER/platform-forge
+    github.com/project-slug: jconover/platform-forge
     argocd/app-name: api-gateway
     backstage.io/kubernetes-id: api-gateway
   tags:
