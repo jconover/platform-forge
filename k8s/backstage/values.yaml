@@ -11,6 +11,10 @@ backstage:
 
   replicas: 1
 
+  # Override default command to match our app structure
+  command: ["node", "src/index.js"]
+  args: []
+
   resources:
     requests:
       cpu: 200m
