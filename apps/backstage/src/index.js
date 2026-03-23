@@ -1,18 +1,15 @@
-const backend = require('@backstage/backend-defaults').createBackend();
+const { createBackend } = require('@backstage/backend-defaults');
 
-// Core plugins
-backend.add(require('@backstage/plugin-app-backend').default);
-backend.add(require('@backstage/plugin-catalog-backend').catalogPlugin);
-backend.add(
-  require('@backstage/plugin-catalog-backend-module-github').catalogModuleGithubEntityProvider,
-);
-backend.add(require('@backstage/plugin-proxy-backend').proxyPlugin);
-backend.add(require('@backstage/plugin-scaffolder-backend').scaffolderPlugin);
-backend.add(require('@backstage/plugin-search-backend').searchPlugin);
-backend.add(
-  require('@backstage/plugin-search-backend-module-catalog').searchModuleCatalogCollator,
-);
-backend.add(require('@backstage/plugin-techdocs-backend').techdocsPlugin);
-backend.add(require('@backstage/plugin-kubernetes-backend').kubernetesPlugin);
+const backend = createBackend();
+
+backend.add(require('@backstage/plugin-app-backend'));
+backend.add(require('@backstage/plugin-catalog-backend'));
+backend.add(require('@backstage/plugin-catalog-backend-module-github'));
+backend.add(require('@backstage/plugin-proxy-backend'));
+backend.add(require('@backstage/plugin-scaffolder-backend'));
+backend.add(require('@backstage/plugin-search-backend'));
+backend.add(require('@backstage/plugin-search-backend-module-catalog'));
+backend.add(require('@backstage/plugin-techdocs-backend'));
+backend.add(require('@backstage/plugin-kubernetes-backend'));
 
 backend.start();
