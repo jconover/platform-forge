@@ -267,19 +267,31 @@ open http://localhost:9090/targets
 
 ### Phase 3a: Backstage IDP
 
-Backstage is deployed via its Helm chart through ArgoCD (already triggered by app-of-apps in Phase 2).
+Backstage is deployed via its Helm chart through ArgoCD (already triggered by app-of-apps in Phase 2). The Backstage container image must be built first.
+
+**Build the Backstage image (first time only):**
+```bash
+# Trigger the CI workflow (has workflow_dispatch)
+gh workflow run ci-backstage.yml
+
+# Or build locally:
+docker build -t ghcr.io/jconover/platform-forge/backstage:latest apps/backstage/
+docker push ghcr.io/jconover/platform-forge/backstage:latest
+```
 
 The Backstage instance includes:
 - **Kubernetes plugin**: shows pod/deployment status per service
 - **ArgoCD plugin**: shows GitOps sync state per service
 - **GitHub integration**: discovers `catalog-info.yaml` entities from the repo
 
-**Configure GitHub integration:**
+**Create required secrets:**
 ```bash
-# Create a GitHub PAT with repo read access, then:
-kubectl create secret generic backstage-github-token \
+# Create a GitHub PAT with repo read access and an ArgoCD auth token, then:
+kubectl create namespace backstage 2>/dev/null
+kubectl create secret generic backstage-secrets \
   --namespace backstage \
-  --from-literal=GITHUB_TOKEN=ghp_your_token_here
+  --from-literal=github-token=ghp_your_token_here \
+  --from-literal=argocd-auth-token=your_argocd_token_here
 ```
 
 **Verify:**

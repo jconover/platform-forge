@@ -1,0 +1,57 @@
+app:
+  title: Platform Forge IDP
+  baseUrl: http://localhost:3000
+
+organization:
+  name: Platform Forge
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+  database:
+    client: pg
+    connection:
+      host: ${POSTGRES_HOST}
+      port: ${POSTGRES_PORT}
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+
+catalog:
+  rules:
+    - allow: [Component, System, Domain, API, Resource, Location]
+  locations:
+    - type: url
+      target: https://github.com/jconover/platform-forge/blob/main/catalog-info.yaml
+    - type: url
+      target: https://github.com/jconover/platform-forge/blob/main/apps/api-gateway/catalog-info.yaml
+    - type: url
+      target: https://github.com/jconover/platform-forge/blob/main/apps/backend-api/catalog-info.yaml
+    - type: url
+      target: https://github.com/jconover/platform-forge/blob/main/apps/worker/catalog-info.yaml
+
+integrations:
+  github:
+    - host: github.com
+      token: ${GITHUB_TOKEN}
+
+kubernetes:
+  serviceLocatorMethod:
+    type: multiTenant
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        - url: https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}
+          name: onprem-homelab
+          authProvider: serviceAccount
+          skipTLSVerify: true
+
+proxy:
+  endpoints: {}
+
+techdocs:
+  builder: local
+  generator:
+    runIn: local
+  publisher:
+    type: local

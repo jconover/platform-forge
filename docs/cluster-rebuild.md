@@ -242,23 +242,25 @@ kubectl create secret generic grafana-admin-secret \
   --from-literal=admin-user=admin \
   --from-literal=admin-password=<your-password>
 
-# Backstage GitHub token (for catalog discovery)
+# Backstage secrets (GitHub token + ArgoCD auth)
 kubectl create namespace backstage 2>/dev/null
-kubectl create secret generic backstage-github-token \
+kubectl create secret generic backstage-secrets \
   --namespace backstage \
-  --from-literal=GITHUB_TOKEN=ghp_your_github_pat_here
+  --from-literal=github-token=ghp_your_github_pat_here \
+  --from-literal=argocd-auth-token=your_argocd_token_here
 ```
 
 ### Build and Push Service Images (First Time Only)
 
-On a fresh cluster, the microservice container images (api-gateway, backend-api, worker) and the Backstage image don't exist in ghcr.io yet. The CI pipelines trigger automatically on code changes to `apps/`, but for the initial build you need to trigger them manually.
+On a fresh cluster, the container images don't exist in ghcr.io yet. The CI pipelines trigger automatically on code changes to `apps/`, but for the initial build you need to trigger them manually.
 
-**Option A: Trigger CI via a code change (recommended)**
-
-Push a trivial change to each service to trigger the GitHub Actions workflow:
+**Option A: Trigger CI via GitHub Actions (recommended)**
 
 ```bash
-# Trigger all three service builds at once
+# Trigger the Backstage build (has workflow_dispatch)
+gh workflow run ci-backstage.yml
+
+# Trigger microservice builds via a trivial code change
 for svc in api-gateway backend-api worker; do
   echo "// initial build $(date +%s)" >> "apps/${svc}/src/main.go" 2>/dev/null || \
   echo "# initial build $(date +%s)" >> "apps/${svc}/src/main.py" 2>/dev/null

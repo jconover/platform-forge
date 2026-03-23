@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage
+  description: Internal Developer Platform portal
+  annotations:
+    github.com/project-slug: jconover/platform-forge
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: website
+  lifecycle: production
+  owner: platform-team
+  system: idp-platform
