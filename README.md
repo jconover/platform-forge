@@ -304,12 +304,24 @@ Push code to apps/api-gateway/ on main
   -> Backstage reflects the updated version
 ```
 
-**Before CI works, update the GitHub username:**
+**Initial image build (fresh cluster only):**
+
+On a fresh cluster, the container images don't exist in ghcr.io yet. Trigger the CI pipelines:
+
 ```bash
-# Replace OWNER with your GitHub username in all files
-grep -rl 'OWNER' --include='*.yml' --include='*.yaml' --include='*.go' --include='Dockerfile' | \
-  xargs sed -i 's/OWNER/jconover/g'
-git add -A && git commit -m "chore: set GitHub owner to jconover" && git push
+# Option A: Trigger CI via a trivial code change
+for svc in api-gateway backend-api worker; do
+  echo "// initial build $(date +%s)" >> "apps/${svc}/src/main.go" 2>/dev/null || \
+  echo "# initial build $(date +%s)" >> "apps/${svc}/src/main.py" 2>/dev/null
+done
+git add apps/ && git commit -m "ci: trigger initial image builds" && git push
+
+# Option B: Build and push locally
+echo $GITHUB_TOKEN | docker login ghcr.io -u <your-github-username> --password-stdin
+for svc in api-gateway backend-api worker; do
+  docker build -t ghcr.io/jconover/platform-forge/${svc}:latest apps/${svc}/
+  docker push ghcr.io/jconover/platform-forge/${svc}:latest
+done
 ```
 
 **Verify the pipeline:**
