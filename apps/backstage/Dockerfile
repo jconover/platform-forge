@@ -10,11 +10,9 @@ COPY app-config.yaml ./
 
 FROM node:20-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 build-essential && \
-    rm -rf /var/lib/apt/lists/*
+RUN addgroup --system --gid 1000 backstage && \
+    adduser --system --uid 1000 --ingroup backstage backstage
 
-RUN useradd -m -u 1000 backstage
 WORKDIR /app
 
 COPY --from=build --chown=backstage:backstage /app /app
