@@ -16,7 +16,6 @@
     "@backstage/plugin-catalog-backend-module-github": "^0.13.0",
     "@backstage/plugin-kubernetes-backend": "^0.21.2",
     "@backstage/plugin-proxy-backend": "^0.6.11",
-    "@backstage/plugin-scaffolder-backend": "^3.2.0",
     "@backstage/plugin-search-backend": "^2.1.0",
     "@backstage/plugin-search-backend-module-catalog": "^0.3.13",
     "@backstage/plugin-techdocs-backend": "^2.1.6",
