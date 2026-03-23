@@ -28,6 +28,23 @@
     group: "{{ kube_user }}"
     mode: "0700"
 
+- name: Create .kube directory for root
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Copy admin.conf to root kubeconfig
+  ansible.builtin.copy:
+    src: "{{ kubeadm_admin_conf }}"
+    dest: /root/.kube/config
+    owner: root
+    group: root
+    mode: "0600"
+    remote_src: true
+
 - name: Copy admin.conf to user kubeconfig
   ansible.builtin.copy:
     src: "{{ kubeadm_admin_conf }}"
@@ -37,10 +54,21 @@
     mode: "0600"
     remote_src: true
 
+- name: Wait for API server to become ready
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 6443
+    delay: 5
+    timeout: 180
+    state: started
+
 - name: Generate kubeadm join command
-  ansible.builtin.command: kubeadm token create --print-join-command
+  ansible.builtin.command: kubeadm token create --print-join-command --kubeconfig {{ kubeadm_admin_conf }}
   register: kubeadm_join_command
   changed_when: false
+  retries: 5
+  delay: 10
+  until: kubeadm_join_command.rc == 0
 
 - name: Save join command to file on master
   ansible.builtin.copy:
