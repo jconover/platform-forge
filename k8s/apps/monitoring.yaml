@@ -20,7 +20,7 @@ spec:
           # Values file from our Git repo (second source)
           - $values/k8s/monitoring/values.yaml
     # Git repo providing the values file
-    - repoURL: https://github.com/OWNER/platform-forge.git
+    - repoURL: https://github.com/jconover/platform-forge.git
       targetRevision: main
       ref: values
   destination:

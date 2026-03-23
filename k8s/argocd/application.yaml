@@ -15,7 +15,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/OWNER/platform-forge.git
+    repoURL: https://github.com/jconover/platform-forge.git
     targetRevision: main
     # This directory contains individual Application manifests for each platform component
     path: k8s/apps

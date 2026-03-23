@@ -5,7 +5,7 @@
 backstage:
   image:
     registry: ghcr.io
-    repository: OWNER/platform-forge/backstage
+    repository: jconover/platform-forge/backstage
     tag: latest
     pullPolicy: Always
 
