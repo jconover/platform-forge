@@ -21,7 +21,9 @@ networking:
   internal: true
   # Reflect pod CIDRs so remote cluster knows our pod network
   reflectIPs: true
-  # Cluster network CIDRs (must match kubeadm init values)
+
+# Network manager — cluster CIDRs (must match kubeadm init values)
+networkManager:
   config:
     podCIDR: "10.244.0.0/16"
     serviceCIDR: "10.96.0.0/12"
