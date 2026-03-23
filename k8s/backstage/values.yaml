@@ -121,6 +121,8 @@ ingress:
 ## PostgreSQL subchart
 postgresql:
   enabled: true
+  image:
+    tag: "15"
   auth:
     username: backstage
     database: backstage

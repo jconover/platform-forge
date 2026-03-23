@@ -249,6 +249,55 @@ kubectl create secret generic backstage-github-token \
   --from-literal=GITHUB_TOKEN=ghp_your_github_pat_here
 ```
 
+### Build and Push Service Images (First Time Only)
+
+On a fresh cluster, the microservice container images (api-gateway, backend-api, worker) and the Backstage image don't exist in ghcr.io yet. The CI pipelines trigger automatically on code changes to `apps/`, but for the initial build you need to trigger them manually.
+
+**Option A: Trigger CI via a code change (recommended)**
+
+Push a trivial change to each service to trigger the GitHub Actions workflow:
+
+```bash
+# Trigger all three service builds at once
+for svc in api-gateway backend-api worker; do
+  echo "// initial build $(date +%s)" >> "apps/${svc}/src/main.go" 2>/dev/null || \
+  echo "# initial build $(date +%s)" >> "apps/${svc}/src/main.py" 2>/dev/null
+done
+git add apps/
+git commit -m "ci: trigger initial image builds for fresh cluster"
+git push
+
+# Watch the builds
+gh run list --workflow=ci-api-gateway.yml
+gh run list --workflow=ci-backend-api.yml
+gh run list --workflow=ci-worker.yml
+```
+
+**Option B: Build and push locally**
+
+If you prefer to build locally (faster, no GitHub Actions required):
+
+```bash
+# Log in to ghcr.io
+echo $GITHUB_TOKEN | docker login ghcr.io -u <your-github-username> --password-stdin
+
+# Build and push each service
+for svc in api-gateway backend-api worker; do
+  docker build -t ghcr.io/jconover/platform-forge/${svc}:latest apps/${svc}/
+  docker push ghcr.io/jconover/platform-forge/${svc}:latest
+done
+```
+
+**Backstage image:** Backstage requires a custom build (see `apps/backstage/` if present, or the [Backstage docs](https://backstage.io/docs/deployment/docker)). Until the image is built and pushed to `ghcr.io/jconover/platform-forge/backstage:latest`, the Backstage pod will remain in ImagePullBackOff.
+
+After images are pushed, ArgoCD will detect the manifest updates (from CI) or you can restart the deployments:
+
+```bash
+kubectl rollout restart deployment api-gateway
+kubectl rollout restart deployment -n backstage backstage
+kubectl rollout restart deployment worker
+```
+
 ### Wait for Everything to Sync
 
 ```bash
