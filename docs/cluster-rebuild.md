@@ -243,6 +243,13 @@ kubectl create secret generic grafana-admin-secret \
   --from-literal=admin-password=<your-password>
 
 # Backstage secrets (GitHub token + ArgoCD auth)
+# 1. Create a GitHub PAT at https://github.com/settings/tokens (repo read access)
+# 2. Generate an ArgoCD API token:
+kubectl port-forward svc/argocd-server -n argocd 8080:80 &
+argocd login localhost:8080 --insecure --username admin \
+  --password $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+argocd account generate-token
+# 3. Create the secret with both values:
 kubectl create namespace backstage 2>/dev/null
 kubectl create secret generic backstage-secrets \
   --namespace backstage \
@@ -311,16 +318,28 @@ watch kubectl get applications -n argocd
 # HEALTH STATUS: Healthy
 ```
 
-### Verify Platform Services
+### Access Platform Services
+
+Services are exposed via ingress-nginx on NodePort 30080 (HTTP) / 30443 (HTTPS).
+If nip.io DNS doesn't resolve (e.g., Tailscale DNS override), use port-forwarding:
 
 ```bash
-# ArgoCD UI
+# ArgoCD UI (port-forward)
+kubectl port-forward svc/argocd-server -n argocd 8080:80 &
+# Open http://localhost:8080
+# Login: admin / $(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+
+# Grafana (port-forward)
+kubectl port-forward svc/prometheus-grafana -n monitoring 3000:80 &
+# Open http://localhost:3000
+
+# Backstage (port-forward)
+kubectl port-forward svc/backstage -n backstage 7007:7007 &
+# Open http://localhost:7007
+
+# Or via ingress (requires nip.io DNS resolution)
 echo "https://argocd.192.168.68.93.nip.io:30443"
-
-# Grafana dashboards
 echo "https://grafana.192.168.68.93.nip.io:30443"
-
-# Backstage portal
 echo "https://backstage.192.168.68.93.nip.io:30443"
 
 # All microservices healthy
