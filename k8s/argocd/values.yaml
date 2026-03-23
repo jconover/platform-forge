@@ -126,3 +126,5 @@ configs:
   cm:
     # Allow tracking revision in annotations (needed for app-of-apps)
     application.resourceTrackingMethod: annotation
+    # Enable API key generation for admin account (needed for Backstage integration)
+    accounts.admin: apiKey, login
