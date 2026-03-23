@@ -10,7 +10,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/OWNER/platform-forge.git
+    repoURL: https://github.com/jconover/platform-forge.git
     targetRevision: main
     path: k8s/apps/api-gateway
   destination:

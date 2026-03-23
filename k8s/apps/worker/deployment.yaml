@@ -26,7 +26,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: worker
-          image: ghcr.io/OWNER/platform-forge/worker:latest
+          image: ghcr.io/jconover/platform-forge/worker:latest
           imagePullPolicy: Always
           ports:
             - name: http

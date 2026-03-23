@@ -17,7 +17,7 @@ spec:
         releaseName: ingress-nginx
         valueFiles:
           - $values/k8s/ingress-nginx/values.yaml
-    - repoURL: https://github.com/OWNER/platform-forge.git
+    - repoURL: https://github.com/jconover/platform-forge.git
       targetRevision: main
       ref: values
   destination:

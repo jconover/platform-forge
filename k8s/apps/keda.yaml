@@ -18,7 +18,7 @@ spec:
         releaseName: keda
         valueFiles:
           - $values/k8s/keda/values.yaml
-    - repoURL: https://github.com/OWNER/platform-forge.git
+    - repoURL: https://github.com/jconover/platform-forge.git
       targetRevision: main
       ref: values
   destination:
