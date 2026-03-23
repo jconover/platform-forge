@@ -27,12 +27,8 @@ server:
       cert-manager.io/cluster-issuer: selfsigned-issuer
       nginx.ingress.kubernetes.io/ssl-passthrough: "false"
       nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    hosts:
-      - argocd.192.168.68.93.nip.io
-    tls:
-      - secretName: argocd-tls
-        hosts:
-          - argocd.192.168.68.93.nip.io
+    hostname: argocd.192.168.68.93.nip.io
+    tls: true
 
   # Run server in insecure mode so ingress handles TLS termination
   extraArgs:
