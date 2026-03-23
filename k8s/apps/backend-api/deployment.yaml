@@ -26,7 +26,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: backend-api
-          image: ghcr.io/jconover/platform-forge/backend-api:e9c130bea3c8ed6669a2e9650b273296ac43c2a2
+          image: ghcr.io/jconover/platform-forge/backend-api:82c7fac6a5753d12829e8f7388fc9239502c2825
           imagePullPolicy: Always
           ports:
             - name: http
