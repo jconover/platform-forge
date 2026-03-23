@@ -4,7 +4,7 @@ metadata:
   name: worker
   description: Go background worker with configurable CPU stress simulation for burst demos
   annotations:
-    github.com/project-slug: OWNER/platform-forge
+    github.com/project-slug: jconover/platform-forge
     argocd/app-name: worker
     backstage.io/kubernetes-id: worker
   tags:

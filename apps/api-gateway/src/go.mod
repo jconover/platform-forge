@@ -1,4 +1,4 @@
-module github.com/OWNER/idp-project/api-gateway
+module github.com/jconover/platform-forge/api-gateway
 
 go 1.22
 

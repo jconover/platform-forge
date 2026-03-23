@@ -4,7 +4,7 @@ metadata:
   name: backend-api
   description: Python FastAPI backend service with mock item data
   annotations:
-    github.com/project-slug: OWNER/platform-forge
+    github.com/project-slug: jconover/platform-forge
     argocd/app-name: backend-api
     backstage.io/kubernetes-id: backend-api
   tags:

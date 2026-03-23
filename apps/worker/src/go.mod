@@ -1,4 +1,4 @@
-module github.com/OWNER/idp-project/worker
+module github.com/jconover/platform-forge/worker
 
 go 1.22
 
