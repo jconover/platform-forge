@@ -150,12 +150,21 @@ kubectl get nodes    # 3 nodes, all Ready
 cilium status        # Cilium healthy
 tailscale status     # All nodes connected
 
-# 4. Bootstrap ArgoCD (everything else deploys automatically)
+# 4. Install storage provisioner (required for Prometheus PVCs)
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml
+kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+# 5. Bootstrap ArgoCD (everything else deploys automatically)
 helm repo add argo https://argoproj.github.io/argo-helm
 helm install argocd argo/argo-cd -n argocd --create-namespace -f k8s/argocd/values.yaml
+
+# 6. Create required secrets and deploy
+kubectl create namespace monitoring
+kubectl create secret generic grafana-admin-secret -n monitoring \
+  --from-literal=admin-user=admin --from-literal=admin-password=<your-password>
 kubectl apply -f k8s/argocd/application.yaml
 
-# 5. Access the dashboards
+# 7. Access the dashboards
 # ArgoCD:   https://argocd.192.168.68.93.nip.io:30443
 # Grafana:  https://grafana.192.168.68.93.nip.io:30443
 # Backstage: https://backstage.192.168.68.93.nip.io:30443
@@ -207,6 +216,11 @@ tailscale status            # All 3 nodes visible as mesh peers
 ArgoCD manages all cluster workloads via the app-of-apps pattern. Once bootstrapped, every other component deploys through Git.
 
 ```bash
+# Install local-path-provisioner (required for Prometheus/Alertmanager PVCs)
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml
+kubectl patch storageclass local-path \
+  -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
 # Install ArgoCD
 helm repo add argo https://argoproj.github.io/argo-helm
 helm install argocd argo/argo-cd \
@@ -216,6 +230,13 @@ helm install argocd argo/argo-cd \
 # Get the ArgoCD admin password
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d
+
+# Create Grafana admin secret (required before monitoring stack starts)
+kubectl create namespace monitoring
+kubectl create secret generic grafana-admin-secret \
+  --namespace monitoring \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password=<your-password>
 
 # Bootstrap app-of-apps (deploys everything else)
 kubectl apply -f k8s/argocd/application.yaml
@@ -237,7 +258,7 @@ open https://argocd.192.168.68.93.nip.io:30443
 
 # Grafana dashboards
 open https://grafana.192.168.68.93.nip.io:30443
-# Default admin password: retrieve from K8s secret
+# Admin credentials: from the grafana-admin-secret created above
 
 # Prometheus targets
 kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090

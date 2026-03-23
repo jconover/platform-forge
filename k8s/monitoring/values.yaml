@@ -100,11 +100,8 @@ grafana:
       enabled: true
 
   # Additional data sources
-  additionalDataSources:
-    - name: Prometheus
-      type: prometheus
-      url: http://prometheus-kube-prometheus-prometheus.monitoring:9090
-      isDefault: true
+  # Note: the sidecar already provisions a default Prometheus datasource,
+  # so no additionalDataSources are needed for basic setups.
 
   # Grafana.ini overrides
   grafana.ini:

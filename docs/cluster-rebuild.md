@@ -172,10 +172,26 @@ kubectl get pods -A
 
 Once the cluster is up, ArgoCD bootstraps everything else.
 
-### Install ArgoCD
+### Install Local Path Provisioner
+
+The cluster needs a storage provisioner for PersistentVolumeClaims (Prometheus metrics, etc.). Install Rancher's local-path-provisioner and set it as the default StorageClass:
 
 ```bash
 cd ../
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml
+
+# Set as default StorageClass
+kubectl patch storageclass local-path \
+  -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+# Verify
+kubectl get storageclass
+# local-path (default)   rancher.io/local-path   Delete   WaitForFirstConsumer   false
+```
+
+### Install ArgoCD
+
+```bash
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update
 
@@ -216,19 +232,21 @@ ArgoCD will now auto-deploy (in order of dependency):
 
 ### Create Required Secrets
 
-Some services need secrets that aren't in Git:
+Some services need secrets that aren't in Git. Create these **before** or shortly after the app-of-apps bootstrap:
 
 ```bash
+# Grafana admin credentials (required — monitoring won't start without this)
+kubectl create namespace monitoring 2>/dev/null
+kubectl create secret generic grafana-admin-secret \
+  --namespace monitoring \
+  --from-literal=admin-user=admin \
+  --from-literal=admin-password=<your-password>
+
 # Backstage GitHub token (for catalog discovery)
 kubectl create namespace backstage 2>/dev/null
 kubectl create secret generic backstage-github-token \
   --namespace backstage \
   --from-literal=GITHUB_TOKEN=ghp_your_github_pat_here
-
-# Grafana admin password (optional, Helm chart generates one if not set)
-# Retrieve auto-generated:
-kubectl -n monitoring get secret kube-prometheus-stack-grafana \
-  -o jsonpath="{.data.admin-password}" | base64 -d && echo
 ```
 
 ### Wait for Everything to Sync
@@ -388,7 +406,9 @@ ansible-playbook playbooks/site.yml --ask-vault-pass
 | Just worker join | `ansible-playbook playbooks/02-worker-join.yml` |
 | Just Cilium install | `ansible-playbook playbooks/03-cni-cilium.yml` |
 | Just Tailscale setup | `ansible-playbook playbooks/04-tailscale.yml --ask-vault-pass` |
+| Install storage provisioner | `kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.30/deploy/local-path-storage.yaml` |
 | Bootstrap ArgoCD | `helm install argocd argo/argo-cd -n argocd --create-namespace -f k8s/argocd/values.yaml` |
+| Create Grafana secret | `kubectl create secret generic grafana-admin-secret -n monitoring --from-literal=admin-user=admin --from-literal=admin-password=<pw>` |
 | Deploy everything | `kubectl apply -f k8s/argocd/application.yaml` |
 | Check cluster | `kubectl get nodes -o wide` |
 | Check Cilium | `cilium status` |
