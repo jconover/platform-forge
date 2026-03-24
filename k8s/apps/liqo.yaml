@@ -24,6 +24,17 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: liqo
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      name: liqo-clusterid-configmap
+      jsonPointers:
+        - /data/CLUSTER_ID
+    - group: batch
+      kind: CronJob
+      name: liqo-telemetry
+      jsonPointers:
+        - /spec/schedule
   syncPolicy:
     automated:
       prune: true

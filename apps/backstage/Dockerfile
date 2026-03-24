@@ -1,4 +1,4 @@
-FROM node:18 AS build
+FROM node:22 AS build
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ RUN npm install --production
 COPY src/ ./src/
 COPY app-config.yaml ./
 
-FROM node:18-slim
+FROM node:22-slim
 
 WORKDIR /app
 

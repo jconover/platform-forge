@@ -349,6 +349,39 @@ curl http://192.168.68.93:30080/health  # via ingress
 
 ## Troubleshooting Rebuild Issues
 
+### nip.io URLs don't resolve (DNS rebinding protection)
+
+If `https://argocd.192.168.68.93.nip.io:30443` fails with "Could not resolve host", your
+router's DNS servers are blocking nip.io responses because they point to private IPs. This is
+DNS rebinding protection — common on home routers.
+
+**Verify the issue:**
+
+```bash
+# This will fail (uses your router DNS):
+nslookup argocd.192.168.68.93.nip.io
+
+# This will succeed (uses Google DNS directly):
+nslookup argocd.192.168.68.93.nip.io 8.8.8.8
+```
+
+**Fix: Route nip.io queries to Google DNS via systemd-resolved:**
+
+```bash
+sudo mkdir -p /etc/systemd/resolved.conf.d
+sudo tee /etc/systemd/resolved.conf.d/nip-io.conf > /dev/null <<'EOF'
+[Resolve]
+DNS=8.8.8.8 8.8.4.4
+Domains=~nip.io
+EOF
+sudo systemctl restart systemd-resolved
+```
+
+This only affects `*.nip.io` lookups — all other DNS queries continue using your normal DNS
+servers. Each workstation that needs to access the cluster URLs needs this fix applied.
+
+**Alternative:** Use `kubectl port-forward` instead — see [docs/port-forward-access.md](port-forward-access.md).
+
 ### kubeadm init fails: "port 6443 already in use"
 
 A previous install wasn't fully cleaned. Reset first:

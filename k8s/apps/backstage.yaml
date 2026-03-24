@@ -23,6 +23,12 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      name: backstage-postgresql
+      jsonPointers:
+        - /data
   syncPolicy:
     automated:
       prune: true
