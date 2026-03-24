@@ -96,9 +96,6 @@ backstage:
               name: onprem-homelab
               authProvider: serviceAccount
               skipTLSVerify: true
-              serviceAccountToken:
-                $secret:
-                  env: K8S_SA_TOKEN
     argocd:
       baseUrl: "${ARGOCD_BASE_URL}"
       username: admin

@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@backstage/backend-defaults": "^0.16.0",
-    "@backstage/plugin-app-backend": "^0.5.12",
     "@backstage/plugin-catalog-backend": "^3.5.0",
     "@backstage/plugin-catalog-backend-module-github": "^0.13.0",
     "@backstage/plugin-kubernetes-backend": "^0.21.2",
