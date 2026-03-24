@@ -127,9 +127,10 @@ postgresql:
   auth:
     username: backstage
     database: backstage
-    # Password stored in a Secret; chart generates one if existingSecret is not set
-    # To use an existing secret: existingSecret: backstage-postgresql-secret
-    password: ""   # override via --set or a values secret file
+    existingSecret: backstage-postgresql
+    secretKeys:
+      userPasswordKey: password
+      adminPasswordKey: postgres-password
   primary:
     resources:
       requests:
