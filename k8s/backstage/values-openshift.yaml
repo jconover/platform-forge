@@ -1,0 +1,90 @@
+# Backstage Helm values — OpenShift overrides
+# Layered on top of values.yaml via multi-source Application
+#
+# Key differences from vanilla K8s:
+#   - Ingress disabled (OpenShift Route used instead)
+#   - No hardcoded UIDs (OpenShift assigns from namespace range)
+#   - URLs updated for OpenShift apps domain
+
+backstage:
+  # Let OpenShift assign UIDs
+  podSecurityContext:
+    runAsNonRoot: true
+
+  extraEnvVars:
+    - name: KUBERNETES_SERVICE_HOST
+      value: "kubernetes.default.svc"
+    - name: KUBERNETES_SERVICE_PORT
+      value: "443"
+    - name: ARGOCD_BASE_URL
+      value: "https://argocd.apps.CLUSTER_DOMAIN"
+    - name: ARGOCD_AUTH_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: backstage-secrets
+          key: argocd-auth-token
+    - name: GITHUB_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: backstage-secrets
+          key: github-token
+    - name: POSTGRES_HOST
+      value: "backstage-postgresql"
+    - name: POSTGRES_PORT
+      value: "5432"
+    - name: POSTGRES_USER
+      value: "backstage"
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: backstage-postgresql
+          key: password
+
+  appConfig:
+    app:
+      baseUrl: "https://backstage.apps.CLUSTER_DOMAIN"
+    backend:
+      baseUrl: "https://backstage.apps.CLUSTER_DOMAIN"
+      cors:
+        origin: "https://backstage.apps.CLUSTER_DOMAIN"
+      database:
+        client: pg
+        connection:
+          host: "${POSTGRES_HOST}"
+          port: "${POSTGRES_PORT}"
+          user: "${POSTGRES_USER}"
+          password: "${POSTGRES_PASSWORD}"
+    integrations:
+      github:
+        - host: github.com
+          token: "${GITHUB_TOKEN}"
+    kubernetes:
+      serviceLocatorMethod:
+        type: multiTenant
+      clusterLocatorMethods:
+        - type: config
+          clusters:
+            - url: "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
+              name: onprem-openshift
+              authProvider: serviceAccount
+              skipTLSVerify: true
+    argocd:
+      baseUrl: "${ARGOCD_BASE_URL}"
+      username: admin
+      password:
+        $secret:
+          env: ARGOCD_AUTH_TOKEN
+      appLocatorMethods:
+        - type: config
+          instances:
+            - name: argocd
+              url: "${ARGOCD_BASE_URL}"
+
+ingress:
+  enabled: false
+
+postgresql:
+  primary:
+    # Let OpenShift assign UIDs
+    podSecurityContext:
+      enabled: false

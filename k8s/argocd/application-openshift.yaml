@@ -1,0 +1,35 @@
+# Bootstrap Application — app-of-apps pattern (OpenShift)
+# Apply this manually once to seed ArgoCD on the OpenShift cluster:
+#   oc apply -f k8s/argocd/application-openshift.yaml
+#
+# This is the OpenShift equivalent of application.yaml.
+# It points to k8s/apps-openshift/ which contains Application manifests
+# tailored for OpenShift (Routes instead of Ingress, no ingress-nginx, etc.)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jconover/platform-forge.git
+    targetRevision: main
+    path: k8s/apps-openshift
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Application
+      jsonPointers:
+        - /metadata/finalizers
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground

@@ -1,0 +1,73 @@
+# Tailscale DaemonSet for OpenShift (RHCOS nodes)
+#
+# RHCOS is immutable — Tailscale cannot be installed at the OS level.
+# Instead, run as a privileged DaemonSet with host networking.
+#
+# Prerequisites:
+#   oc adm policy add-scc-to-user privileged -z tailscale -n tailscale
+#   oc apply -f 01-tailscale-namespace.yaml
+#   Edit the Secret in 01-tailscale-namespace.yaml with your auth key
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: tailscale
+  namespace: tailscale
+  labels:
+    app: tailscale
+spec:
+  selector:
+    matchLabels:
+      app: tailscale
+  template:
+    metadata:
+      labels:
+        app: tailscale
+    spec:
+      serviceAccountName: tailscale
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+        # Run on all nodes including masters
+        - operator: Exists
+      containers:
+        - name: tailscale
+          image: tailscale/tailscale:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          env:
+            - name: TS_AUTHKEY
+              valueFrom:
+                secretKeyRef:
+                  name: tailscale-auth
+                  key: authkey
+            - name: TS_KUBE_SECRET
+              value: ""
+            - name: TS_USERSPACE
+              value: "false"
+            - name: TS_ROUTES
+              value: "10.244.0.0/16"
+            - name: TS_ACCEPT_ROUTES
+              value: "true"
+            - name: TS_EXTRA_ARGS
+              value: "--advertise-exit-node=false"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+            - name: tailscale-state
+              mountPath: /var/lib/tailscale
+      volumes:
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
+        - name: tailscale-state
+          hostPath:
+            path: /var/lib/tailscale
+            type: DirectoryOrCreate

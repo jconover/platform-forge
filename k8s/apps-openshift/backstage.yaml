@@ -1,0 +1,38 @@
+# ArgoCD Application — Backstage IDP (OpenShift)
+# Uses values-openshift.yaml overlay for Route-based ingress and UID handling
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backstage
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://backstage.github.io/charts
+      chart: backstage
+      targetRevision: "1.x"
+      helm:
+        releaseName: backstage
+        valueFiles:
+          - $values/k8s/backstage/values.yaml
+          - $values/k8s/backstage/values-openshift.yaml
+    - repoURL: https://github.com/jconover/platform-forge.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: backstage
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      name: backstage-postgresql
+      jsonPointers:
+        - /data
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

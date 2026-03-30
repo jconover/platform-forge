@@ -1,0 +1,44 @@
+# ArgoCD Application — Liqo (OpenShift on-prem)
+# Uses values-openshift.yaml overlay for OCP-specific CIDRs and SCC requirements
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: liqo
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://helm.liqo.io
+      chart: liqo
+      targetRevision: "0.x"
+      helm:
+        releaseName: liqo
+        valueFiles:
+          - $values/k8s/liqo/values-onprem.yaml
+          - $values/k8s/liqo/values-openshift.yaml
+    - repoURL: https://github.com/jconover/platform-forge.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: liqo
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      name: liqo-clusterid-configmap
+      jsonPointers:
+        - /data/CLUSTER_ID
+    - group: batch
+      kind: CronJob
+      name: liqo-telemetry
+      jsonPointers:
+        - /spec/schedule
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

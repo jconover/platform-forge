@@ -1,0 +1,32 @@
+# Liqo Helm values — OpenShift on-prem cluster overrides
+# Layered on top of values-onprem.yaml via multi-source Application
+#
+# Key differences from vanilla K8s:
+#   - Auth endpoint uses OpenShift Route instead of nginx Ingress
+#   - Pod/service CIDRs match OpenShift defaults (may differ from kubeadm)
+#   - No Cilium conflicts (OVN-Kubernetes is the CNI)
+#
+# Prerequisites:
+#   oc adm policy add-scc-to-user privileged -z liqo-gateway -n liqo
+#   oc adm policy add-scc-to-user anyuid -z liqo-controller-manager -n liqo
+
+discovery:
+  config:
+    clusterName: onprem-openshift
+    clusterLabels:
+      topology.kubernetes.io/region: homelab
+      node-type: on-prem
+      platform: openshift
+
+# Update CIDRs to match your OpenShift cluster
+# Check with: oc get network.config cluster -o jsonpath='{.status.clusterNetwork[0].cidr}'
+#         and: oc get network.config cluster -o jsonpath='{.status.serviceNetwork[0]}'
+networkManager:
+  config:
+    podCIDR: "10.128.0.0/14"
+    serviceCIDR: "172.30.0.0/16"
+
+auth:
+  ingress:
+    # Disable nginx ingress — use OpenShift Route
+    enable: false

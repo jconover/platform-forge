@@ -1,0 +1,22 @@
+# Tailscale namespace and privileged SCC binding
+# Apply first: oc apply -f 01-tailscale-namespace.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tailscale
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tailscale
+  namespace: tailscale
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tailscale-auth
+  namespace: tailscale
+type: Opaque
+stringData:
+  authkey: "REPLACE_WITH_TAILSCALE_AUTH_KEY"

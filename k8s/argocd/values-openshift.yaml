@@ -1,0 +1,14 @@
+# ArgoCD Helm values — OpenShift overrides
+# Layered on top of values.yaml via multi-source Application
+#
+# Key differences from vanilla K8s:
+#   - Ingress disabled (OpenShift Route used instead)
+#   - No hardcoded UIDs (OpenShift assigns from namespace range)
+
+server:
+  ingress:
+    enabled: false
+
+  # Let OpenShift assign UIDs from the namespace range
+  securityContext:
+    runAsNonRoot: true

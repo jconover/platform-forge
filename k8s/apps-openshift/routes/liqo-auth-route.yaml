@@ -1,0 +1,18 @@
+# OpenShift Route for Liqo auth endpoint
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: liqo-auth
+  namespace: liqo
+  labels:
+    app.kubernetes.io/name: liqo
+spec:
+  host: liqo-auth.apps.CLUSTER_DOMAIN
+  to:
+    kind: Service
+    name: liqo-auth
+    weight: 100
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough

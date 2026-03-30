@@ -1,0 +1,19 @@
+# OpenShift Route for Backstage
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: backstage
+  namespace: backstage
+  labels:
+    app.kubernetes.io/name: backstage
+spec:
+  host: backstage.apps.CLUSTER_DOMAIN
+  to:
+    kind: Service
+    name: backstage
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

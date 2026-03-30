@@ -1,0 +1,34 @@
+# ArgoCD Application — ArgoCD itself (OpenShift)
+# Uses upstream ArgoCD Helm chart (not OpenShift GitOps Operator)
+# with values-openshift.yaml overlay to disable Ingress
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: "6.x"
+      helm:
+        releaseName: argocd
+        valueFiles:
+          - $values/k8s/argocd/values.yaml
+          - $values/k8s/argocd/values-openshift.yaml
+    - repoURL: https://github.com/jconover/platform-forge.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -1,0 +1,25 @@
+# ArgoCD Application — worker (OpenShift)
+# Same Deployment manifests as K8s — no changes needed
+# KEDA ScaledObject is applied separately (KEDA installed via OperatorHub on OpenShift)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: worker
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jconover/platform-forge.git
+    targetRevision: main
+    path: k8s/apps/worker
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

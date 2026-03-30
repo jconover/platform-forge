@@ -1,0 +1,22 @@
+# Enable user workload monitoring on OpenShift
+#
+# This tells the built-in Prometheus to also scrape ServiceMonitors
+# in user namespaces (default, backstage, etc.), so your app metrics
+# are collected without deploying a separate kube-prometheus-stack.
+#
+# Apply: oc apply -f 03-enable-user-workload-monitoring.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-monitoring-config
+  namespace: openshift-monitoring
+data:
+  config.yaml: |
+    enableUserWorkload: true
+    prometheusK8s:
+      retention: 7d
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 20Gi

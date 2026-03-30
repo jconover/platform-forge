@@ -1,0 +1,18 @@
+# cert-manager Helm values — OpenShift overrides
+# Layered on top of values.yaml via multi-source Application
+#
+# Key difference: remove hardcoded UIDs so OpenShift can assign
+# from the namespace UID range (required by restricted-v2 SCC)
+
+securityContext:
+  runAsNonRoot: true
+
+podSecurityContext: {}
+
+webhook:
+  securityContext:
+    runAsNonRoot: true
+
+cainjector:
+  securityContext:
+    runAsNonRoot: true
